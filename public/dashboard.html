@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pockit – Dashboard</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Inter:wght@400;600&family=Montserrat:wght@700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/dashboard.js"></script>
+  <style>
+    /* Dashboard-specific overrides (if needed) */
+    .dashboard-container { display: flex; min-height: 100vh; background: #F9FBF4; }
+    .sidebar { width: 240px; background: #fff; box-shadow: 2px 0 12px rgba(44,62,80,0.04); display: flex; flex-direction: column; align-items: stretch; padding: 0; }
+    .sidebar-header { display: flex; align-items: center; gap: 12px; padding: 32px 24px 24px 24px; }
+    .sidebar-logo { width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #00BFFF 60%, #1DE9B6 100%); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; font-weight: 700; }
+    .sidebar-title { font-size: 1.35rem; font-weight: 700; color: #00BFFF; font-family: 'Montserrat',sans-serif; }
+    .sidebar-menu { display: flex; flex-direction: column; gap: 4px; margin-top: 32px; }
+    .sidebar-link { display: flex; align-items: center; gap: 12px; padding: 12px 28px; font-size: 1.08rem; color: #2C3E50; text-decoration: none; border-radius: 8px 0 0 8px; font-weight: 500; transition: background 0.15s, color 0.15s; }
+    .sidebar-link.active { background: #E6F7FF; color: #00BFFF; font-weight: 700; }
+    .sidebar-link .icon { font-size: 1.2rem; }
+    .sidebar-link:hover:not(.active) { background: #F2FAFF; color: #00BFFF; }
+    .sidebar-spacer { flex: 1; }
+    .sidebar-logout { margin: 24px 0 24px 0; text-align: center; }
+    .logout-btn { background: #fff; color: #00BFFF; border: 1.5px solid #00BFFF; border-radius: 8px; padding: 8px 24px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .logout-btn:hover { background: #00BFFF; color: #fff; }
+    /* Main content */
+    .main-content { flex: 1; padding: 36px 36px 24px 36px; }
+    .dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+    .dashboard-greeting { }
+    .dashboard-greeting h1 { font-size: 2rem; font-weight: 700; margin: 0 0 6px 0; color: #2C3E50; }
+    .dashboard-greeting p { color: #7B8A97; font-size: 1.08rem; margin: 0; }
+    .dashboard-header-right { display: flex; align-items: center; gap: 24px; }
+    .currency-select { background: #fff; border: 1.5px solid #E0E0E0; border-radius: 8px; padding: 6px 18px; font-size: 1rem; color: #2C3E50; font-weight: 500; outline: none; }
+    .last-updated { color: #7B8A97; font-size: 0.98rem; }
+    
+    /* Unified Top Bar Layout */
+    .top-bar { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; margin-right: 2rem; margin-top: 1rem; }
+    .add-btn { background: #00BFFF; color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 1.08rem; padding: 10px 28px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,191,255,0.08); transition: background 0.18s; }
+    .add-btn:hover { background: #1DE9B6; color: #2C3E50; }
+    .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: #0056A8; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+    .user-avatar:hover { background: #004080; transform: scale(1.05); }
+    
+    /* User Profile Dropdown */
+    .user-profile-dropdown { position: relative; }
+    .dropdown-menu { position: absolute; top: 100%; right: 0; margin-top: 8px; background: #fff; border-radius: 12px; box-shadow: 0 8px 32px rgba(44,62,80,0.12); min-width: 280px; z-index: 1000; opacity: 0; visibility: hidden; transform: translateY(-10px); transition: all 0.3s ease; border: 1px solid #F0F0F0; }
+    .dropdown-menu.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    .dropdown-header { padding: 20px; display: flex; align-items: center; gap: 12px; }
+    .dropdown-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #00BFFF 60%, #1DE9B6 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; }
+    .dropdown-user-info { flex: 1; }
+    .dropdown-name { font-size: 1.1rem; font-weight: 700; color: #2C3E50; margin-bottom: 4px; }
+    .dropdown-email { font-size: 0.95rem; color: #7B8A97; }
+    .dropdown-divider { height: 1px; background: #F0F0F0; margin: 0; }
+    .dropdown-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #2C3E50; text-decoration: none; font-size: 1rem; font-weight: 500; transition: background 0.2s; border: none; background: none; width: 100%; text-align: left; cursor: pointer; }
+    .dropdown-item:hover { background: #F8F9FA; color: #00BFFF; }
+    .dropdown-item.logout-item:hover { background: #FFF5F5; color: #FF5A5A; }
+    .dropdown-icon { font-size: 1.1rem; }
+    /* Cards */
+    .dashboard-cards { display: flex; gap: 24px; margin-bottom: 24px; }
+    .dashboard-card { flex: 1; background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(44,62,80,0.07); padding: 24px 24px 18px 24px; display: flex; flex-direction: column; gap: 8px; min-width: 180px; }
+    .dashboard-card .card-title { font-size: 1.08rem; color: #7B8A97; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .dashboard-card .card-value { font-size: 1.7rem; font-weight: 700; color: #2C3E50; margin: 2px 0 0 0; }
+    .dashboard-card .card-change { font-size: 0.98rem; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+    .card-change.positive { color: #1DE9B6; }
+    .card-change.negative { color: #FF5A5A; }
+    .card-change.neutral { color: #00BFFF; }
+    .dashboard-card .card-icon { font-size: 1.2rem; margin-left: 6px; }
+    /* Charts */
+    .dashboard-graphs { display: flex; gap: 24px; margin-bottom: 24px; }
+    .dashboard-graph { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(44,62,80,0.07); padding: 24px; flex: 1; min-width: 320px; display: flex; flex-direction: column; }
+    .dashboard-graph-title { font-size: 1.15rem; font-weight: 700; color: #2C3E50; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+    .dashboard-graph-desc { color: #7B8A97; font-size: 0.98rem; margin-bottom: 16px; }
+    .dashboard-graph-canvas { width: 100%; height: 220px; }
+    .dashboard-graph-canvas.line { height: 180px; }
+    .dashboard-graph-canvas.bar { height: 180px; }
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .dashboard-cards, .dashboard-graphs { flex-direction: column; gap: 18px; }
+      .main-content { padding: 24px 8px; }
+      .sidebar { width: 100px; }
+      .sidebar-title { display: none; }
+      .sidebar-link { padding: 12px 10px; font-size: 0.98rem; }
+    }
+    @media (max-width: 700px) {
+      .dashboard-container { flex-direction: column; }
+      .sidebar { width: 100%; flex-direction: row; height: 60px; box-shadow: 0 2px 12px rgba(44,62,80,0.07); }
+      .sidebar-header, .sidebar-spacer, .sidebar-logout { display: none; }
+      .sidebar-menu { flex-direction: row; gap: 0; margin: 0; width: 100%; justify-content: space-around; }
+      .sidebar-link { border-radius: 0; padding: 10px 0; justify-content: center; width: 100%; }
+      .main-content { padding: 12px 2vw; }
+      .dropdown-menu { min-width: 260px; right: -10px; }
+      .dashboard-header-right { gap: 12px; }
+      .last-updated { font-size: 0.9rem; }
+    }
+    
+    /* Toast Notification Styles */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      pointer-events: none;
+    }
+    
+    .toast {
+      background: #fff;
+      color: #2C3E50;
+      border: 1px solid #F0F0F0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(44,62,80,0.12);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.3s ease;
+      pointer-events: auto;
+    }
+    
+    .toast.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    
+    .toast.success {
+      border-left: 4px solid #1DE9B6;
+      background: linear-gradient(135deg, #F0FDF4, #fff);
+    }
+    
+    .toast.error {
+      border-left: 4px solid #FF5A5A;
+      background: linear-gradient(135deg, #FEF2F2, #fff);
+    }
+    
+    .toast-icon {
+      font-size: 1.2rem;
+    }
+    
+    .toast.success .toast-icon {
+      color: #1DE9B6;
+    }
+    
+    .toast.error .toast-icon {
+      color: #FF5A5A;
+    }
+    
+    .toast-message {
+      flex: 1;
+      font-weight: 500;
+    }
+    
+    .toast-close {
+      background: none;
+      border: none;
+      color: #7B8A97;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      border-radius: 4px;
+      transition: color 0.2s;
+    }
+    
+    .toast-close:hover {
+      color: #2C3E50;
+    }
+  </style>
+</head>
+<body>
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+  
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">P</div>
+        <div class="sidebar-title">Pockit</div>
+      </div>
+      <hr style="border:none;border-top:1.5px solid #F0F0F0;margin:0 18px 0 18px;">
+      <div style="font-size:0.98rem;color:#7B8A97;font-weight:600;padding:18px 0 6px 28px;letter-spacing:0.5px;">Menu</div>
+      <nav class="sidebar-menu">
+        <a href="#" class="sidebar-link active"><span class="icon">🏠</span>Dashboard</a>
+        <a href="expense.html" class="sidebar-link"><span class="icon">💸</span>Expenses</a>
+        <a href="emi.html" class="sidebar-link"><span class="icon">📅</span>EMI Manager</a>
+        <a href="debt.html" class="sidebar-link"><span class="icon">📊</span>Debt Tracker</a>
+        <a href="savings.html" class="sidebar-link"><span class="icon">🎯</span>Savings Goals</a>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-logout">
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
+    </aside>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Header -->
+      <div class="dashboard-header">
+        <div class="dashboard-greeting">
+          <h1>Welcome back, John!</h1>
+          <p>Here's your financial overview for this month</p>
+        </div>
+        <div class="dashboard-header-right">
+          <div class="last-updated">Last updated<br><span id="currentDate">Today, 10/07/2025</span></div>
+          <div class="top-bar">
+            <div class="user-profile-dropdown">
+              <div class="user-avatar" id="userAvatar" onclick="toggleDropdown()">JD</div>
+              <div class="dropdown-menu" id="dropdownMenu">
+                <div class="dropdown-header">
+                  <div class="dropdown-avatar" id="dropdownAvatar">JD</div>
+                  <div class="dropdown-user-info">
+                    <div class="dropdown-name" id="dropdownName">John Doe</div>
+                    <div class="dropdown-email" id="dropdownEmail">john@example.com</div>
+                  </div>
+                </div>
+                <div class="dropdown-divider"></div>
+                <a href="profile.html" class="dropdown-item">
+                  <span class="dropdown-icon">👤</span>
+                  View Profile
+                </a>
+                <a href="settings.html" class="dropdown-item">
+                  <span class="dropdown-icon">⚙️</span>
+                  Settings
+                </a>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item logout-item" onclick="handleLogout()">
+                  <span class="dropdown-icon">🚪</span>
+                  Log out
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Cards -->
+      <div class="dashboard-cards">
+        <div class="dashboard-card">
+          <div class="card-title">Total Balance <span class="card-icon">💰</span></div>
+          <div class="card-value" id="totalBalance">₹0</div>
+          <div class="card-change positive">+5.2% from last month</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="card-title">Monthly Income <span class="card-icon">💳</span></div>
+          <div class="card-value" id="monthlyIncome">₹0</div>
+          <div class="card-change positive">+2.1% from last month</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="card-title">Monthly Expenses <span class="card-icon">💸</span></div>
+          <div class="card-value" id="monthlyExpenses">₹0</div>
+          <div class="card-change negative">-8.3% from last month</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="card-title">Savings Goal <span class="card-icon">🎯</span></div>
+          <div class="card-value" id="savingsGoal">₹0</div>
+          <div class="card-change neutral">+12% from last month</div>
+        </div>
+      </div>
+      <!-- Graphs -->
+      <div class="dashboard-graphs">
+        <div class="dashboard-graph" style="flex:1.2; min-width:0; height:320px;">
+          <div class="dashboard-graph-title"><span class="icon">📊</span>Expense Breakdown</div>
+          <div class="dashboard-graph-desc">Your spending categories this month</div>
+          <div style="flex:1; min-height:0; height:220px; display:flex;"><canvas id="expensePie" class="dashboard-graph-canvas" style="width:100%!important; height:100%!important;"></canvas></div>
+        </div>
+        <div class="dashboard-graph" style="flex:1; min-width:0; height:320px;">
+          <div class="dashboard-graph-title"><span class="icon">📈</span>Savings Trend</div>
+          <div class="dashboard-graph-desc">Your savings progress over time</div>
+          <div style="flex:1; min-height:0; height:220px; display:flex;"><canvas id="savingsLine" class="dashboard-graph-canvas line" style="width:100%!important; height:100%!important;"></canvas></div>
+        </div>
+      </div>
+      <div class="dashboard-graph" style="margin-bottom:0; height:320px;">
+        <div class="dashboard-graph-title"><span class="icon">📊</span>Income vs Expenses</div>
+        <div class="dashboard-graph-desc">Monthly comparison of your income and spending</div>
+        <div style="flex:1; min-height:0; height:220px; display:flex;"><canvas id="incomeBar" class="dashboard-graph-canvas bar" style="width:100%!important; height:100%!important;"></canvas></div>
+      </div>
+    </main>
+  </div>
+</body>
+</html> 
